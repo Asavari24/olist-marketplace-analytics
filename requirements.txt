@@ -1,0 +1,12 @@
+duckdb>=1.0
+pandas>=2.2
+numpy>=1.26,<2.3
+scipy>=1.11
+statsmodels>=0.14
+matplotlib>=3.8
+requests>=2.31
+pytest>=8.0
+
+# Warehouse / transform
+dbt-core>=1.9,<1.11
+dbt-duckdb>=1.9,<1.11

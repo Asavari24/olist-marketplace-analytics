@@ -1,0 +1,84 @@
+name: olist_analytics
+version: "1.0.0"
+config-version: 2
+
+profile: olist_analytics
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+analysis-paths: ["analyses"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Directory holding the nine Olist CSVs. Overridden with --vars if the
+  # extract lives elsewhere; olist/download.py writes here by default.
+  raw_dir: "../data/raw"
+
+  # ------------------------------------------------------------------
+  # Analysis window.
+  #
+  # The raw purchase timestamps span 2016-09-04 to 2018-10-17, but the tails
+  # are not usable. September-December 2016 carries 329 orders total, 283 of
+  # them in the single week of 3 October, which is a pilot and not a trading
+  # period. At the other end the extract is censored: the 20 orders placed in
+  # September and October 2018 have no delivery date at all, against 97-99%
+  # delivered in every earlier month, so their outcome is missing by
+  # construction rather than at random.
+  #
+  # Everything downstream is filtered to this window and every mart carries
+  # the window on the row, so a number lifted out of a mart cannot silently
+  # lose the caveat. mart_data_coverage quantifies exactly what is excluded.
+  # ------------------------------------------------------------------
+  analysis_start: "2017-01-01"
+  analysis_end: "2018-08-31"
+
+  # ------------------------------------------------------------------
+  # Delivery-promise definition.
+  #
+  # order_estimated_delivery_date is a DATE, not a timestamp: the promise is
+  # "by end of that day". An order delivered at 23:10 on the estimated date is
+  # on time. Lateness is therefore measured against the END of the estimated
+  # day, not against midnight at its start -- the off-by-one that turns a 6.8%
+  # late rate into an 8.6% one.
+  # ------------------------------------------------------------------
+  late_grace_hours: 0
+
+  # ------------------------------------------------------------------
+  # Geolocation cleaning bounds.
+  #
+  # olist_geolocation_dataset has points outside Brazil's territory, which
+  # blow up any distance computed from an unfiltered centroid. These are the
+  # bounding-box limits of Brazil's continental + island territory.
+  # ------------------------------------------------------------------
+  brazil_lat_min: -33.75
+  brazil_lat_max: 5.28
+  brazil_lon_min: -73.99
+  brazil_lon_max: -28.85
+
+  # Cap on how far a zip centroid may sit from its own state's centroid before
+  # it is treated as a bad geocode rather than a real address (kilometres).
+  max_zip_from_state_km: 700
+
+  # ------------------------------------------------------------------
+  # RFM scoring. Recency is measured from the analysis window end rather than
+  # from "today", so the segmentation is reproducible in 2030.
+  # ------------------------------------------------------------------
+  rfm_quantiles: 5
+
+models:
+  olist_analytics:
+    staging:
+      +materialized: view
+      +schema: staging
+      +tags: ["staging"]
+    intermediate:
+      +materialized: table
+      +schema: intermediate
+      +tags: ["intermediate"]
+    marts:
+      +materialized: table
+      +schema: marts
+      +tags: ["marts"]

@@ -1,0 +1,150 @@
+version: 2
+
+sources:
+  # ---------------------------------------------------------------------
+  # The nine CSVs of the Brazilian E-Commerce Public Dataset by Olist,
+  # read in place by DuckDB rather than loaded first. Nothing here is
+  # modified on disk; olist/download.py can re-fetch the directory byte for
+  # byte and the warehouse rebuilds identically.
+  #
+  # Every column arrives as VARCHAR (`all_varchar=true`) and is cast
+  # explicitly in staging. That is deliberate. DuckDB's type sniffer reads
+  # the quoted zip prefix "01037" as the integer 1037, silently destroying
+  # the leading zero that makes it a Sao Paulo centre zip -- and the join to
+  # geolocation then misses. Typing in staging where it is visible and
+  # reviewable beats typing in an inference pass that nobody reads.
+  # ---------------------------------------------------------------------
+  - name: olist_raw
+    description: >
+      Brazilian E-Commerce Public Dataset by Olist. ~100k orders placed on the
+      Olist marketplace between September 2016 and October 2018, released by
+      Olist under CC BY-NC-SA 4.0. Customer, seller and product identifiers
+      were anonymised by the publisher and company names in review text were
+      replaced with Game of Thrones house names.
+    # OLIST_RAW is exported as an ABSOLUTE path by reproduce.sh and by
+    # olist/warehouse.py. DuckDB bakes this path into the view definition, so
+    # a relative one would make every staging view resolve against the
+    # caller's working directory and break the moment anything queried the
+    # warehouse from outside dbt_project/. The relative default is a
+    # convenience for a bare `dbt run` from dbt_project/, nothing more.
+    meta:
+      external_location: "read_csv_auto('{{ env_var('OLIST_RAW', var('raw_dir')) }}/{name}.csv', all_varchar=true, header=true)"
+
+    tables:
+      - name: olist_orders_dataset
+        description: >
+          One row per order. The delivery timeline lives here: purchase,
+          payment approval, handover to the carrier, delivery to the customer,
+          and the estimate shown to the buyer at checkout.
+        columns:
+          - name: order_id
+            description: Grain of this table.
+            tests: [unique, not_null]
+          - name: customer_id
+            description: >
+              Per-order customer key, NOT a person. Unique per order by
+              construction; customer_unique_id in the customers table is the
+              person. Confusing these inflates the customer count from 96,096
+              to 99,441 and makes repeat purchase rate look like zero.
+            tests: [unique, not_null]
+          - name: order_status
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                      values: [delivered, shipped, canceled, unavailable, invoiced, processing, created, approved]
+
+      - name: olist_order_items_dataset
+        description: >
+          One row per item line within an order. order_item_id is a sequence
+          within the order (1, 2, 3 ...), not a product key -- two units of the
+          same product appear as two rows. price and freight_value are
+          per-line, so order value is a SUM over this table.
+        columns:
+          - name: order_id
+            tests: [not_null]
+          - name: order_item_id
+            tests: [not_null]
+          - name: product_id
+            tests: [not_null]
+          - name: seller_id
+            tests: [not_null]
+
+      - name: olist_order_payments_dataset
+        description: >
+          One row per payment instrument used on an order. An order can be
+          split across several instruments, so payment_value must be summed
+          per order and never joined row-to-row against items.
+        columns:
+          - name: order_id
+            tests: [not_null]
+          - name: payment_type
+            tests:
+              - accepted_values:
+                  arguments:
+                      values: [credit_card, boleto, voucher, debit_card, not_defined]
+
+      - name: olist_order_reviews_dataset
+        description: >
+          Satisfaction survey sent after delivery. NOT one row per order and
+          NOT unique on review_id -- see stg_order_reviews for the duplication
+          and how it is resolved.
+        columns:
+          - name: review_id
+            tests: [not_null]
+          - name: order_id
+            tests: [not_null]
+          - name: review_score
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                      values: ["1", "2", "3", "4", "5"]
+
+      - name: olist_customers_dataset
+        description: >
+          One row per customer_id, i.e. per order. customer_unique_id is the
+          deduplicated person and is the only key on which retention means
+          anything.
+        columns:
+          - name: customer_id
+            tests: [unique, not_null]
+          - name: customer_unique_id
+            tests: [not_null]
+          - name: customer_state
+            tests: [not_null]
+
+      - name: olist_sellers_dataset
+        description: One row per seller, with the zip prefix the parcel ships from.
+        columns:
+          - name: seller_id
+            tests: [unique, not_null]
+          - name: seller_state
+            tests: [not_null]
+
+      - name: olist_products_dataset
+        description: >
+          One row per product. Category and the dimension/weight columns are
+          null for 610 and 2 products respectively. Column names carry the
+          publisher's misspellings (product_name_lenght); staging renames them.
+        columns:
+          - name: product_id
+            tests: [unique, not_null]
+
+      - name: olist_geolocation_dataset
+        description: >
+          1,000,163 geocoded points keyed by zip prefix -- many points per
+          prefix, so this is NOT a lookup table until it is aggregated. It also
+          contains coordinates outside Brazil. int_zip_centroids does both jobs.
+        columns:
+          - name: geolocation_zip_code_prefix
+            tests: [not_null]
+
+      - name: product_category_name_translation
+        description: >
+          Portuguese to English category names. Covers 71 of the 73 categories
+          present in the products table; the two missing are handled in staging
+          rather than dropped.
+        columns:
+          - name: product_category_name
+            tests: [unique, not_null]

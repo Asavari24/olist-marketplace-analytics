@@ -1,0 +1,14 @@
+# Raw Olist CSVs (126MB). Re-fetch with olist/download.py rather than commit.
+data/raw/*.csv
+
+.venv/
+warehouse/*.duckdb
+warehouse/*.duckdb.wal
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+logs/
+**/__pycache__/
+**/.pytest_cache/
+.DS_Store
+dbt_project/.user.yml

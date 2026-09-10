@@ -1,0 +1,101 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: One row per order, typed, with the delivery promise as an instant.
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: customer_id
+        tests: [unique, not_null]
+      - name: purchased_at
+        tests: [not_null]
+      - name: promise_deadline_at
+        tests: [not_null]
+      - name: has_delivery_outcome
+        description: TRUE only where status is delivered AND a delivery timestamp exists.
+        tests: [not_null]
+
+  - name: stg_order_items
+    description: >
+      One row per item line. Grain (order_id, order_item_seq), asserted in
+      tests/assert_order_item_grain_is_unique.sql rather than via a package
+      dependency.
+    columns:
+      - name: order_id
+        tests: [not_null]
+      - name: order_item_seq
+        tests: [not_null]
+      - name: item_price
+        tests: [not_null]
+      - name: item_freight
+        tests: [not_null]
+
+  - name: stg_order_payments
+    description: One row per payment instrument. Grain (order_id, payment_seq).
+    columns:
+      - name: order_id
+        tests: [not_null]
+      - name: payment_value
+        tests: [not_null]
+
+  - name: stg_order_reviews
+    description: >
+      One row per reviewed order after resolving the two independent
+      duplications in the raw survey table. 98,673 rows.
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: review_score
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                  values: [1, 2, 3, 4, 5]
+                  quote: false
+
+  - name: stg_customers
+    description: >
+      One row per customer_id, which is one row per order. person_key
+      (customer_unique_id) is the person-level key.
+    columns:
+      - name: order_customer_key
+        tests: [unique, not_null]
+      - name: person_key
+        tests: [not_null]
+      - name: customer_state
+        tests: [not_null]
+      - name: customer_region
+        tests:
+          - accepted_values:
+              arguments:
+                  values: [Norte, Nordeste, Centro-Oeste, Sudeste, Sul, Desconhecido]
+
+  - name: stg_sellers
+    description: One row per seller.
+    columns:
+      - name: seller_id
+        tests: [unique, not_null]
+      - name: seller_state
+        tests: [not_null]
+
+  - name: stg_products
+    description: One row per product, English category always populated.
+    columns:
+      - name: product_id
+        tests: [unique, not_null]
+      - name: category_en
+        description: Never null - unmapped and missing categories get explicit labels.
+        tests: [not_null]
+
+  - name: stg_geolocation
+    description: >
+      Geocoded points, many per zip prefix. Not a lookup table; aggregate via
+      int_zip_centroids.
+    columns:
+      - name: zip_prefix
+        tests: [not_null]
+      - name: lat
+        tests: [not_null]
+      - name: lon
+        tests: [not_null]
