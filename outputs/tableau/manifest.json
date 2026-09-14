@@ -1,0 +1,48 @@
+{
+  "generated_at_utc": "2026-09-13T19:36:45+00:00",
+  "warehouse": "/Users/nikhilshejwal/test_code_claude/olist_analytics/warehouse/olist.duckdb",
+  "tables": {
+    "mart_order_fact": {
+      "rows": 99092,
+      "file": "mart_order_fact.csv"
+    },
+    "mart_delivery_performance": {
+      "rows": 3365,
+      "file": "mart_delivery_performance.csv"
+    },
+    "mart_delivery_stage_attribution": {
+      "rows": 3,
+      "file": "mart_delivery_stage_attribution.csv"
+    },
+    "mart_review_drivers": {
+      "rows": 133,
+      "file": "mart_review_drivers.csv"
+    },
+    "mart_review_driver_ranking": {
+      "rows": 12,
+      "file": "mart_review_driver_ranking.csv"
+    },
+    "mart_seller_performance": {
+      "rows": 3068,
+      "file": "mart_seller_performance.csv"
+    },
+    "mart_category_economics": {
+      "rows": 74,
+      "file": "mart_category_economics.csv"
+    },
+    "mart_customer_rfm": {
+      "rows": 95774,
+      "file": "mart_customer_rfm.csv"
+    },
+    "mart_cohort_retention": {
+      "rows": 210,
+      "file": "mart_cohort_retention.csv"
+    },
+    "mart_data_coverage": {
+      "rows": 16,
+      "file": "mart_data_coverage.csv"
+    }
+  },
+  "analysis_start": "2017-01-01",
+  "analysis_end": "2018-08-31"
+}

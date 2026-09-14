@@ -63,8 +63,19 @@ scored as (
         *,
         -- Recency: 5 = most recent. Reversed so that high is good on every
         -- axis, which is what makes the concatenated RFM cell readable.
-        6 - ntile({{ var('rfm_quantiles') }}) over (order by recency_days)      as r_score,
-        ntile({{ var('rfm_quantiles') }}) over (order by monetary_gmv)          as m_score,
+        --
+        -- person_key is a tiebreaker, not decoration. Thousands of customers
+        -- share an identical recency_days (and many share an identical
+        -- monetary_gmv), and ntile() has to put tied rows on one side of a
+        -- boundary or the other. Without a deterministic tiebreaker DuckDB's
+        -- parallel sort picks differently between runs, and segment counts
+        -- move by ~50 people each rebuild -- measured, not hypothetical.
+        -- Ordering by the key makes the split arbitrary but STABLE, which is
+        -- the most that can be asked of a quantile cut through a tie.
+        6 - ntile({{ var('rfm_quantiles') }}) over (order by recency_days, person_key)
+                                                                                as r_score,
+        ntile({{ var('rfm_quantiles') }}) over (order by monetary_gmv, person_key)
+                                                                                as m_score,
 
         -- Frequency scored on the real distribution, not on quantiles.
         case

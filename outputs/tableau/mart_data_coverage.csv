@@ -1,0 +1,17 @@
+area,metric,n_orders,note
+window,orders in raw extract,99441,"All orders in the source, 2016-09-04 to 2018-10-17."
+window,orders excluded: before analysis_start,329,"Sep-Dec 2016 pilot traffic, 283 of it in one week. Too sparse to trend."
+window,orders excluded: after analysis_end,20,"Right-censored: none of these had recorded a delivery when the snapshot was cut, so their on-time rate is undefined, not good."
+window,orders in analysis window,99092,The denominator for every mart in this project.
+delivery,orders with a delivery outcome,96203,status = delivered AND a delivery timestamp exists. The only rows on which late rate is defined.
+delivery,orders without a delivery outcome,2889,"shipped / canceled / unavailable / processing. Excluded from delivery rates, NOT counted as on-time."
+delivery,delivered orders with clamped stage order,1369,Raw timestamps out of sequence (mostly carrier handover before payment approval). Stages made monotonic; see int_order_delivery_timeline.
+delivery,delivered orders missing an approval timestamp,14,"Approval time carried forward from purchase, giving that stage zero duration."
+basket,orders with no item lines,739,"Almost all unavailable/canceled. GMV, freight and category are null for these; they are retained so cancellation rates stay correct."
+geography,orders with an unresolvable geocode,584,"Customer or seller zip prefix absent from the geolocation file. route_distance_km is null, never zero-filled."
+geography,geolocation points dropped as out of range,31,Outside Brazil bounding box. A further slice is dropped per-state in int_zip_centroids.
+reviews,orders never reviewed,762,"Non-response. Small here (~0.8%) but skewed toward undelivered orders, so review means are mildly optimistic."
+reviews,raw review rows collapsed in dedup,551,"Raw survey table is unique on neither review_id nor order_id. Resolved to one row per order, latest response wins."
+reviews,orders re-surveyed with disagreeing scores,202,"Two reviews, different scores. Latest kept; excluding them entirely is a robustness check in olist/review_drivers.py."
+customers,distinct persons,95774,"customer_unique_id. The per-order customer_id would give 99,092 and a repeat rate of exactly zero."
+customers,persons who ordered more than once,2975,The entire basis for every retention number in this project. 3.11% of persons.

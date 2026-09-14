@@ -12,3 +12,10 @@ logs/
 **/.pytest_cache/
 .DS_Store
 dbt_project/.user.yml
+
+# Row-level BI extracts are regenerable build artifacts: these two are 94MB
+# of the 97MB that outputs/tableau weighs. The eight summary marts beside
+# them total ~2.5MB and ARE committed, so a reviewer can read every result
+# without building anything.
+outputs/tableau/mart_order_fact.csv
+outputs/tableau/mart_customer_rfm.csv

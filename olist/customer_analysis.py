@@ -117,6 +117,7 @@ def main() -> int:
                avg((n_orders > 1)::int)                 as repeat_rate
         from first_order
         group by 1
+        order by 1
     """).df()
 
     concentration = con.execute("""
