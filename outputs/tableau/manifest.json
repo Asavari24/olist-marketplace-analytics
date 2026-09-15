@@ -1,46 +1,78 @@
 {
-  "generated_at_utc": "2026-09-13T19:36:45+00:00",
+  "generated_at_utc": "2026-09-15T18:02:41+00:00",
   "warehouse": "/Users/nikhilshejwal/test_code_claude/olist_analytics/warehouse/olist.duckdb",
   "tables": {
-    "mart_order_fact": {
-      "rows": 99092,
-      "file": "mart_order_fact.csv"
-    },
     "mart_delivery_performance": {
       "rows": 3365,
-      "file": "mart_delivery_performance.csv"
+      "file": "mart_delivery_performance.csv",
+      "size_mb": 1.32,
+      "committed_to_git": true
     },
     "mart_delivery_stage_attribution": {
       "rows": 3,
-      "file": "mart_delivery_stage_attribution.csv"
+      "file": "mart_delivery_stage_attribution.csv",
+      "size_mb": 0.0,
+      "committed_to_git": true
     },
     "mart_review_drivers": {
       "rows": 133,
-      "file": "mart_review_drivers.csv"
+      "file": "mart_review_drivers.csv",
+      "size_mb": 0.03,
+      "committed_to_git": true
     },
     "mart_review_driver_ranking": {
       "rows": 12,
-      "file": "mart_review_driver_ranking.csv"
+      "file": "mart_review_driver_ranking.csv",
+      "size_mb": 0.0,
+      "committed_to_git": true
     },
     "mart_seller_performance": {
       "rows": 3068,
-      "file": "mart_seller_performance.csv"
+      "file": "mart_seller_performance.csv",
+      "size_mb": 1.13,
+      "committed_to_git": true
     },
     "mart_category_economics": {
       "rows": 74,
-      "file": "mart_category_economics.csv"
-    },
-    "mart_customer_rfm": {
-      "rows": 95774,
-      "file": "mart_customer_rfm.csv"
+      "file": "mart_category_economics.csv",
+      "size_mb": 0.03,
+      "committed_to_git": true
     },
     "mart_cohort_retention": {
       "rows": 210,
-      "file": "mart_cohort_retention.csv"
+      "file": "mart_cohort_retention.csv",
+      "size_mb": 0.02,
+      "committed_to_git": true
+    },
+    "mart_seller_cohorts": {
+      "rows": 3068,
+      "file": "mart_seller_cohorts.csv",
+      "size_mb": 0.44,
+      "committed_to_git": true
     },
     "mart_data_coverage": {
       "rows": 16,
-      "file": "mart_data_coverage.csv"
+      "file": "mart_data_coverage.csv",
+      "size_mb": 0.0,
+      "committed_to_git": true
+    },
+    "mart_order_fact": {
+      "rows": 99092,
+      "file": "mart_order_fact.csv",
+      "size_mb": 78.35,
+      "committed_to_git": false
+    },
+    "mart_customer_rfm": {
+      "rows": 95774,
+      "file": "mart_customer_rfm.csv",
+      "size_mb": 20.49,
+      "committed_to_git": false
+    },
+    "mart_freight_economics": {
+      "rows": 112279,
+      "file": "mart_freight_economics.csv",
+      "size_mb": 39.28,
+      "committed_to_git": false
     }
   },
   "analysis_start": "2017-01-01",

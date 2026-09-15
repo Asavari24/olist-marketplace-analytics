@@ -20,7 +20,7 @@ in 12 is losing orders it would have kept.
 ## 2. Late rate
 
 - Late rate: **6.79%** (95% CI 6.63% to 6.95%)
-- When an order is late it is late by **10.3 days** on average (95% CI 9.9 to 10.7)
+- When an order is late it is late by **10.3 days** on average (95% CI 10.0 to 10.7)
 
 The magnitude is the part that matters. A 6.8% failure rate sounds survivable;
 a failure that averages nine days past a promise already padded by twelve does

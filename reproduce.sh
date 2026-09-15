@@ -35,6 +35,8 @@ echo "==> 6/7 Analysis layer"
 .venv/bin/python -m olist.delivery_analysis
 .venv/bin/python -m olist.review_drivers
 .venv/bin/python -m olist.customer_analysis
+.venv/bin/python -m olist.seller_survival
+.venv/bin/python -m olist.freight_model
 
 echo "==> 7/7 BI extracts"
 .venv/bin/python -m olist.export
@@ -43,6 +45,8 @@ echo
 echo "Done."
 echo "  Warehouse   warehouse/olist.duckdb"
 echo "  Findings    docs/delivery_findings.md, docs/review_drivers.md,"
-echo "              docs/customer_findings.md, docs/data_profile.md"
+echo "              docs/customer_findings.md, docs/seller_survival.md,"
+echo "              docs/freight_findings.md, docs/data_profile.md"
+echo "  Dashboards  docs/tableau_dashboard_spec.md"
 echo "  Charts      outputs/charts/"
 echo "  Extracts    outputs/tableau/"

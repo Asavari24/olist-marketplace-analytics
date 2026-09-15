@@ -68,6 +68,23 @@ vars:
   # ------------------------------------------------------------------
   rfm_quantiles: 5
 
+  # ------------------------------------------------------------------
+  # Seller survival.
+  #
+  # A seller whose last sale falls in the final months of the window has not
+  # necessarily churned -- the window simply ended. Treating them as churned
+  # biases every survival curve downward, and the bias grows with cohort
+  # recency, which is exactly the direction that makes recent cohorts look
+  # worse than they are. Sellers last seen within this many months of
+  # analysis_end are right-CENSORED instead.
+  # ------------------------------------------------------------------
+  seller_censor_months: 1
+
+  # A seller counts as churned once this many consecutive months pass with no
+  # sale. Olist sellers trade intermittently, so a single quiet month is not
+  # an exit.
+  seller_churn_gap_months: 2
+
 models:
   olist_analytics:
     staging:

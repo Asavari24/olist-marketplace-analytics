@@ -1,0 +1,165 @@
+version: 2
+
+models:
+  - name: mart_order_fact
+    description: >
+      The published order fact and the analytical spine. One row per in-window
+      order, with value/distance/lateness bands precomputed so downstream
+      consumers do not each invent their own cut points.
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: person_key
+        description: customer_unique_id. NOT order_customer_key -- see stg_customers.
+        tests: [not_null]
+      - name: purchased_at
+        tests: [not_null]
+      - name: has_delivery_outcome
+        tests: [not_null]
+      - name: dominant_stage
+        tests:
+          - accepted_values:
+              arguments:
+                values: [payment_approval, seller_handling, carrier_transit]
+
+  - name: mart_delivery_performance
+    description: Late rate and stage times by dimension, value and month.
+    columns:
+      - name: dimension
+        tests: [not_null]
+      - name: n_orders
+        tests: [not_null]
+
+  - name: mart_delivery_stage_attribution
+    description: >
+      One row per delivery stage. variance_contribution sums to exactly 1,
+      enforced by tests/assert_variance_contributions_sum_to_one.sql.
+    columns:
+      - name: stage
+        tests:
+          - unique
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [payment_approval, seller_handling, carrier_transit]
+
+  - name: mart_review_drivers
+    description: Score distribution per candidate driver bucket.
+    columns:
+      - name: driver
+        tests: [not_null]
+      - name: n_reviews
+        tests: [not_null]
+
+  - name: mart_review_driver_ranking
+    description: Drivers ranked by effect size. Marginal, not joint - see olist/review_drivers.py.
+    columns:
+      - name: driver
+        tests: [unique, not_null]
+
+  - name: mart_seller_performance
+    description: >
+      One row per seller. Scale metrics are item-level so multi-seller orders
+      are not double-counted; delivery and review columns are order-level and
+      therefore shared on those orders (see multi_seller_order_share).
+    columns:
+      - name: seller_id
+        tests: [unique, not_null]
+      - name: gmv
+        tests: [not_null]
+
+  - name: mart_category_economics
+    description: One row per product category, item-level.
+    columns:
+      - name: category
+        tests: [unique, not_null]
+
+  - name: mart_customer_rfm
+    description: >
+      One row per person. Read the model header before using f_score: with
+      96.9% of customers at exactly one order, frequency is near-degenerate
+      and is scored on its real distribution rather than by quantile.
+    columns:
+      - name: person_key
+        tests: [unique, not_null]
+      - name: r_score
+        tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5]
+                quote: false
+      - name: f_score
+        tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5]
+                quote: false
+      - name: m_score
+        tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5]
+                quote: false
+
+  - name: mart_cohort_retention
+    description: >
+      Acquisition cohort x age. A negative result: retention is ~3%. Only
+      observable cells are emitted.
+    columns:
+      - name: cohort_month
+        tests: [not_null]
+      - name: is_observable
+        tests: [not_null]
+
+  - name: mart_data_coverage
+    description: Every exclusion the pipeline makes, counted. The footnote table.
+    columns:
+      - name: metric
+        tests: [unique, not_null]
+
+  - name: mart_seller_cohorts
+    description: >
+      One row per seller, with the right-censoring flag that makes survival
+      analysis possible. 53% of sellers were still trading when the window
+      closed; treating them as churned biases every curve downward and the
+      bias grows with cohort recency.
+    columns:
+      - name: seller_id
+        tests: [unique, not_null]
+      - name: cohort_month
+        tests: [not_null]
+      - name: lifespan_months
+        tests: [not_null]
+      - name: is_censored
+        tests: [not_null]
+      - name: churn_event
+        description: Kaplan-Meier event indicator. 1 = observed exit, 0 = censored.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: gmv_quartile
+        tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]
+                quote: false
+
+  - name: mart_freight_economics
+    description: >
+      Item-line freight with its drivers. billable_kg is max(mass, volumetric)
+      per the standard 5000 cm3/kg courier divisor - 76% of lines are billed on
+      volume, so raw mass is the wrong variable on most rows.
+    columns:
+      - name: order_id
+        tests: [not_null]
+      - name: item_freight
+        tests: [not_null]
+      - name: billable_kg
+        tests: [not_null]
+      - name: is_free_shipping
+        tests: [not_null]
+      - name: weight_band
+        tests: [not_null]

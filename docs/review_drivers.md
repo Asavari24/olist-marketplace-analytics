@@ -34,17 +34,17 @@ carrying the result.
 
 | Driver                           |   Coef (log-odds) |   Odds ratio |      p |   Per 1 SD |
 |:---------------------------------|------------------:|-------------:|-------:|-----------:|
-| Delivered late (0/1)             |           -1.8084 |       0.1639 | 0      |    -0.4506 |
-| Days late (0 if on time)         |            0.0156 |       1.0158 | 0      |     0.0708 |
-| Carrier transit days             |           -0.0465 |       0.9546 | 0      |    -0.4028 |
-| Seller handling days             |           -0.0553 |       0.9462 | 0      |    -0.1867 |
-| Seller missed dispatch SLA (0/1) |           -0.0268 |       0.9736 | 0.3414 |    -0.0076 |
-| Promise slack (days early)       |            0.0029 |       1.0029 | 0.0054 |     0.0293 |
-| log(order value)                 |            0.0198 |       1.02   | 0.0958 |     0.0182 |
-| Freight / price ratio            |           -0.0251 |       0.9752 | 0.4734 |    -0.0073 |
-| log(route km)                    |            0.0235 |       1.0238 | 0.0009 |     0.0321 |
-| Items in order                   |           -0.3279 |       0.7204 | 0      |    -0.1752 |
-| Multi-seller order (0/1)         |           -1.6216 |       0.1976 | 0      |    -0.1849 |
+| Delivered late (0/1)             |           -1.8081 |       0.164  | 0      |    -0.4506 |
+| Days late (0 if on time)         |            0.0156 |       1.0157 | 0      |     0.0706 |
+| Carrier transit days             |           -0.0465 |       0.9545 | 0      |    -0.4031 |
+| Seller handling days             |           -0.0553 |       0.9462 | 0      |    -0.1869 |
+| Seller missed dispatch SLA (0/1) |           -0.0264 |       0.9739 | 0.3483 |    -0.0075 |
+| Promise slack (days early)       |            0.0029 |       1.0029 | 0.0057 |     0.0291 |
+| log(order value)                 |            0.02   |       1.0202 | 0.0927 |     0.0184 |
+| Freight / price ratio            |           -0.025  |       0.9753 | 0.4766 |    -0.0072 |
+| log(route km)                    |            0.0237 |       1.0239 | 0.0008 |     0.0323 |
+| Items in order                   |           -0.328  |       0.7204 | 0      |    -0.1752 |
+| Multi-seller order (0/1)         |           -1.6221 |       0.1975 | 0      |    -0.185  |
 | Payment instalments              |           -0      |       1      | 0.9946 |    -0      |
 
 ## 3. Logit on P(1-2 star review)

@@ -21,17 +21,27 @@ import duckdb
 
 from . import OUTPUTS_DIR, WAREHOUSE
 
+# Summary marts: small enough to commit, so a reviewer can read every result
+# without building the warehouse.
 TABLES = [
-    "mart_order_fact",
     "mart_delivery_performance",
     "mart_delivery_stage_attribution",
     "mart_review_drivers",
     "mart_review_driver_ranking",
     "mart_seller_performance",
     "mart_category_economics",
-    "mart_customer_rfm",
     "mart_cohort_retention",
+    "mart_seller_cohorts",
     "mart_data_coverage",
+]
+
+# Row-level extracts, big enough that they are gitignored and regenerated
+# rather than committed. Listed separately so the manifest records which
+# tables a given checkout will and will not have on disk.
+LARGE_TABLES = [
+    "mart_order_fact",
+    "mart_customer_rfm",
+    "mart_freight_economics",
 ]
 
 
@@ -52,14 +62,24 @@ def main() -> int:
     manifest["analysis_start"] = str(window[0])
     manifest["analysis_end"] = str(window[1])
 
-    for table in TABLES:
+    for table, committed in [(t, True) for t in TABLES] + \
+                            [(t, False) for t in LARGE_TABLES]:
         path = dest / f"{table}.csv"
         con.execute(
             f"copy (select * from main_marts.{table}) to '{path}' (header, delimiter ',')"
         )
         n = con.execute(f"select count(*) from main_marts.{table}").fetchone()[0]
-        manifest["tables"][table] = {"rows": n, "file": path.name}
-        print(f"  {table:36s} {n:>9,} rows -> {path.name}")
+        size_mb = path.stat().st_size / 1e6
+        manifest["tables"][table] = {
+            "rows": n,
+            "file": path.name,
+            "size_mb": round(size_mb, 2),
+            # False = gitignored, so a fresh checkout will not have this file
+            # until export runs. Recorded here so the absence is explicable.
+            "committed_to_git": committed,
+        }
+        flag = "" if committed else "   (gitignored, regenerated)"
+        print(f"  {table:36s} {n:>9,} rows  {size_mb:>7.1f}MB -> {path.name}{flag}")
 
     con.close()
 

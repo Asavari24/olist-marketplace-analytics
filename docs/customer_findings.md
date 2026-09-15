@@ -78,8 +78,8 @@ structure that is not there. See the header of `mart_customer_rfm`.
 
 | first_experience    |   persons |   repeat_rate |
 |:--------------------|----------:|--------------:|
-| first order late    |      6352 |        0.0252 |
-| first order on time |     86744 |        0.0303 |
+| first order late    |      6351 |        0.0250 |
+| first order on time |     86745 |        0.0303 |
 
 Suggestive, but weak evidence at this base rate: with a repeat rate near 3%
 the absolute difference between the two groups is small, and customers whose
