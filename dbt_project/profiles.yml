@@ -3,5 +3,8 @@ olist_analytics:
   outputs:
     dev:
       type: duckdb
-      path: ../warehouse/olist.duckdb
+      # Defaults to the local warehouse so `dbt run` from dbt_project/ works
+      # with no environment set up. Modal overrides it to the Volume path
+      # (/data/olist.duckdb) via OLIST_DUCKDB -- see modal_app.py.
+      path: "{{ env_var('OLIST_DUCKDB', '../warehouse/olist.duckdb') }}"
       threads: 4

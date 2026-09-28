@@ -192,6 +192,47 @@ Source data © Olist, released on Kaggle under CC BY-NC-SA 4.0.
 | `docs/tableau_dashboard_spec.md` | Five dashboard builds, and what not to compute in Tableau |
 | `docs/data_profile.md` | Source profile written before any modelling |
 
+## Deployed on Modal
+
+The warehouse rebuilds nightly on [Modal](https://modal.com) and serves two
+marts over HTTP. `modal_app.py` holds the whole deployment.
+
+```bash
+pip install modal && modal setup
+modal volume create olist-warehouse
+python -m olist.download                              # fetch the 9 CSVs locally
+modal volume put olist-warehouse ./data/raw /raw      # 126MB onto the Volume
+
+modal run modal_app.py::refresh                       # one-off test run
+modal deploy modal_app.py                             # schedule + endpoints
+```
+
+| Endpoint | Serves |
+|---|---|
+| `/delivery_performance?dimension=customer_region&limit=20` | Late rate and stage times for any slice |
+| `/coverage` | Every row the pipeline excludes, and why |
+
+<!-- Fill these in after `modal deploy` prints them. Modal's URL pattern is
+     https://<workspace>--olist-marts-<function-name>.modal.run -->
+**Live URLs:** _not yet deployed — see Status._
+
+The refresh runs on a `Cron("0 6 * * *")` schedule and rebuilds *and tests*
+everything with `dbt build`, so a failed test fails the run rather than
+publishing a half-built warehouse.
+
+Two details that are easy to get wrong and are handled explicitly:
+
+- **The refresh is three phases, not one `dbt build`.** The forecast marts read
+  tables that `olist/forecast.py` writes, so the Python step sits inside the
+  dbt DAG. A plain `dbt build` on a fresh Volume fails at the forecast marts.
+- **NaN is converted to null before serialising.** Starlette renders JSON with
+  `allow_nan=False`, and columns like `mean_lateness_days_when_late` are
+  genuinely NaN where a slice had no late orders. Returned raw, those slices
+  answer HTTP 500.
+
+Paths are environment-driven (`OLIST_DUCKDB`, `OLIST_RAW`) with local defaults,
+so the same repo builds on a laptop and in the container with no branching.
+
 ## Build order
 
 The forecasting step sits *inside* the dbt DAG rather than after it, so
@@ -207,3 +248,8 @@ Warehouse, tests and all six analyses are complete and passing. The dashboard
 spec is written but no workbook is built — the repo ships the extracts and the
 build instructions, not a `.twbx`. The forecast intervals are indicative rather
 than calibrated; backtest residuals would give better ones.
+
+`modal_app.py` is written and statically validated — it imports cleanly against
+Modal 1.5.5, its ignore patterns and endpoint SQL are verified against the real
+warehouse — but it has **not been deployed**, so the live URLs above are still
+blank. Deploying needs `modal setup`, which is an interactive browser login.
