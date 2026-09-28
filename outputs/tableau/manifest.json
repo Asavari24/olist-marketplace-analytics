@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-15T18:02:41+00:00",
+  "generated_at_utc": "2026-09-27T00:40:48+00:00",
   "warehouse": "/Users/nikhilshejwal/test_code_claude/olist_analytics/warehouse/olist.duckdb",
   "tables": {
     "mart_delivery_performance": {
@@ -50,6 +50,12 @@
       "size_mb": 0.44,
       "committed_to_git": true
     },
+    "mart_forecast_accuracy": {
+      "rows": 5240,
+      "file": "mart_forecast_accuracy.csv",
+      "size_mb": 1.68,
+      "committed_to_git": true
+    },
     "mart_data_coverage": {
       "rows": 16,
       "file": "mart_data_coverage.csv",
@@ -60,6 +66,18 @@
       "rows": 99092,
       "file": "mart_order_fact.csv",
       "size_mb": 78.35,
+      "committed_to_git": false
+    },
+    "mart_weekly_demand": {
+      "rows": 128398,
+      "file": "mart_weekly_demand.csv",
+      "size_mb": 15.9,
+      "committed_to_git": false
+    },
+    "mart_forecast_variance": {
+      "rows": 54496,
+      "file": "mart_forecast_variance.csv",
+      "size_mb": 12.77,
       "committed_to_git": false
     },
     "mart_customer_rfm": {

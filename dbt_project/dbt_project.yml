@@ -85,6 +85,29 @@ vars:
   # an exit.
   seller_churn_gap_months: 2
 
+  # ------------------------------------------------------------------
+  # Forecasting.
+  #
+  # The series is 87 weeks long. Two consequences that shape everything in
+  # the forecast module:
+  #
+  #   Annual seasonality cannot be fitted. Only 35 weeks have a lag-52
+  #   counterpart, and Black Friday 2017 appears exactly once -- a model
+  #   cannot learn a yearly pattern from a single observation of it. Every
+  #   model here is therefore trend-and-level only, and the November spike is
+  #   flagged rather than predicted.
+  #
+  #   The last week of the window is truncated. analysis_end is a Friday, so
+  #   the week beginning 2018-08-27 holds five days and 130 orders against
+  #   ~1,000 in a normal week. Left in, it reads as a 90% collapse in demand
+  #   and drags every trend estimate down. It is excluded, not patched.
+  # ------------------------------------------------------------------
+  forecast_horizon_weeks: 4
+  # A segment needs enough history to be worth forecasting at all. Below
+  # these, the backtest reports noise and the forecast is not published.
+  forecast_min_total_orders: 260
+  forecast_min_weeks_present: 52
+
 models:
   olist_analytics:
     staging:

@@ -13,11 +13,13 @@ logs/
 .DS_Store
 dbt_project/.user.yml
 
-# Row-level BI extracts are regenerable build artifacts: these three are
-# 138MB of the ~141MB that outputs/tableau weighs. The nine summary marts
-# beside them total ~2.9MB and ARE committed, so a reviewer can read every
+# Row-level BI extracts are regenerable build artifacts: these five are
+# ~160MB of the ~164MB that outputs/tableau weighs. The ten summary marts
+# beside them total ~4.5MB and ARE committed, so a reviewer can read every
 # result without building anything. olist/export.py records which is which
 # in manifest.json, so a missing file here is explicable rather than odd.
 outputs/tableau/mart_order_fact.csv
 outputs/tableau/mart_customer_rfm.csv
 outputs/tableau/mart_freight_economics.csv
+outputs/tableau/mart_weekly_demand.csv
+outputs/tableau/mart_forecast_variance.csv

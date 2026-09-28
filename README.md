@@ -4,8 +4,8 @@ A tested dbt + DuckDB warehouse over the [Brazilian E-Commerce Public Dataset by
 Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (~100k orders,
 2016–2018), plus a Python analysis layer for the statistics SQL cannot do.
 
-The emphasis is on getting the *definitions* right and proving they hold: 25 dbt
-models, 118 dbt tests, 40 Python unit tests, and an explicit coverage mart that
+The emphasis is on getting the *definitions* right and proving they hold: 28 dbt
+models, 145 dbt tests, 67 Python unit tests, and an explicit coverage mart that
 counts every row the pipeline excludes.
 
 ```bash
@@ -68,7 +68,16 @@ parcels carry punishing freight ratios. Within a single weight × distance cell,
 identical-looking shipments differ in price by up to **6.1×**, and roughly half
 of freight variation is explained by nothing in the dataset.
 
-**6. There is no repeat business to segment.**
+**6. An eight-week average beats every trend model at forecasting demand.**
+Weekly order and GMV forecasts by category and state, backtested over 52
+rolling origins. A trailing eight-week mean cuts MAE **25% below naive** at a
+four-week horizon, while random-walk drift and damped Holt are both *worse*
+than naive — on a short, spiky, growing series, extrapolating a trend amplifies
+noise faster than it captures signal. The catch: the most accurate model is
+also the most biased, running about **97 orders/week low** because a trailing
+average always lags a growing series. Good MAE, systematic under-buying.
+
+**7. There is no repeat business to segment.**
 **96.9%** of customers bought exactly once; the repeat rate is **3.11%**. Three
 alternative explanations are tested and ruled out — wrong customer key, window
 truncation (mature cohorts: 5.03%), and a repurchase cycle longer than the window
@@ -85,8 +94,8 @@ data/raw/            the nine source CSVs (gitignored; fetch with olist.download
 dbt_project/
   models/staging/    typing, renaming, and the two review deduplications
   models/intermediate/  zip centroids, delivery decomposition, the order spine
-  models/marts/      12 published marts
-  tests/             17 singular tests asserting the invariants
+  models/marts/      15 published marts
+  tests/             24 singular tests asserting the invariants
 olist/               Python analysis layer
 outputs/charts/      rendered figures
 docs/                generated findings
@@ -107,6 +116,9 @@ docs/                generated findings
 | `mart_cohort_retention` | cohort × age | The retention triangle |
 | `mart_seller_cohorts` | seller | Survival inputs with right-censoring flags |
 | `mart_freight_economics` | item line | Freight with billable weight and its drivers |
+| `mart_weekly_demand` | grain × segment × week | Zero-filled forecasting input |
+| `mart_forecast_accuracy` | segment × model × horizon | MAPE, MASE, bias, skill vs naive |
+| `mart_forecast_variance` | segment × week | Forecast vs actuals, triaged for investigation |
 | `mart_data_coverage` | exclusion | Every row the pipeline drops, and why |
 
 ## Decisions worth knowing about
@@ -134,12 +146,20 @@ documented at length in the model that handles it.
   F is scored on its actual distribution instead, and the degeneracy is flagged.
 - **The analysis window is 2017-01-01 to 2018-08-31.** 2016 is a 329-order pilot;
   the last 20 orders are right-censored with no delivery recorded.
+- **The last week is truncated, and forecasting must drop it.** The window ends
+  on a Friday, so the final week holds five days and 130 orders against ~1,000
+  in a normal week. Left in, it reads as a 90% demand collapse and drags every
+  trend estimate down.
+- **MAPE is the wrong primary forecast metric here.** It is undefined at zero
+  demand, and thin segments have zero-demand weeks — in the sparsest cells it
+  is computable on only 65% of scored weeks. It is published with a
+  `mape_coverage` column beside it; MASE and skill-vs-naive decide.
 
 ## Testing
 
 ```bash
-cd dbt_project && DBT_PROFILES_DIR=$PWD dbt test   # 118 tests
-python -m pytest olist/tests -q                    # 40 tests
+cd dbt_project && DBT_PROFILES_DIR=$PWD dbt test   # 145 tests
+python -m pytest olist/tests -q                    # 67 tests
 ```
 
 The SQL tests assert the things that would otherwise fail silently: that the
@@ -168,11 +188,22 @@ Source data © Olist, released on Kaggle under CC BY-NC-SA 4.0.
 | `docs/customer_findings.md` | Repeat rate, with three alternative explanations ruled out |
 | `docs/seller_survival.md` | Kaplan-Meier survival, log-rank by seller size |
 | `docs/freight_findings.md` | Log-log pricing model, unexplained spread, route residuals |
+| `docs/forecast_findings.md` | Weekly demand forecasts, rolling-origin backtest, variance triage |
 | `docs/tableau_dashboard_spec.md` | Five dashboard builds, and what not to compute in Tableau |
 | `docs/data_profile.md` | Source profile written before any modelling |
 
+## Build order
+
+The forecasting step sits *inside* the dbt DAG rather than after it, so
+`reproduce.sh` runs three phases: `dbt run --exclude tag:forecast`, then
+`python -m olist.forecast` (which writes the backtest tables), then
+`dbt run --select tag:forecast`. A rolling-origin backtest is a loop over model
+refits and cannot be expressed in SQL; every metric computed *from* its output
+is ordinary arithmetic and belongs in a tested dbt model.
+
 ## Status
 
-Warehouse, tests and all five analyses are complete and passing. The dashboard
+Warehouse, tests and all six analyses are complete and passing. The dashboard
 spec is written but no workbook is built — the repo ships the extracts and the
-build instructions, not a `.twbx`.
+build instructions, not a `.twbx`. The forecast intervals are indicative rather
+than calibrated; backtest residuals would give better ones.

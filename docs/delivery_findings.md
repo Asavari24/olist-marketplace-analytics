@@ -8,7 +8,7 @@ Population: 96,203 delivered in-window orders.
 
 - Mean actual delivery: **12.54 days**
 - Mean promised: **24.65 days**
-- Mean slack: **12.11 days** (95% CI 12.04 to 12.17)
+- Mean slack: **12.11 days** (95% CI 12.05 to 12.17)
 - Orders use only **51.5%** of their promised window on average
 
 This is the single largest structural fact in the delivery data, and it cuts
@@ -19,8 +19,8 @@ in 12 is losing orders it would have kept.
 
 ## 2. Late rate
 
-- Late rate: **6.79%** (95% CI 6.63% to 6.95%)
-- When an order is late it is late by **10.3 days** on average (95% CI 10.0 to 10.7)
+- Late rate: **6.79%** (95% CI 6.64% to 6.95%)
+- When an order is late it is late by **10.3 days** on average (95% CI 10.0 to 10.6)
 
 The magnitude is the part that matters. A 6.8% failure rate sounds survivable;
 a failure that averages nine days past a promise already padded by twelve does

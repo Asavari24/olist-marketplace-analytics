@@ -32,6 +32,7 @@ TABLES = [
     "mart_category_economics",
     "mart_cohort_retention",
     "mart_seller_cohorts",
+    "mart_forecast_accuracy",
     "mart_data_coverage",
 ]
 
@@ -40,6 +41,8 @@ TABLES = [
 # tables a given checkout will and will not have on disk.
 LARGE_TABLES = [
     "mart_order_fact",
+    "mart_weekly_demand",
+    "mart_forecast_variance",
     "mart_customer_rfm",
     "mart_freight_economics",
 ]

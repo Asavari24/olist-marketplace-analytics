@@ -1,0 +1,53 @@
+version: 2
+
+sources:
+  # ---------------------------------------------------------------------
+  # Tables written by olist/forecast.py into the same DuckDB file.
+  #
+  # This is the one place where a Python step sits INSIDE the dbt DAG rather
+  # than after it, so the build order is not optional:
+  #
+  #   1. dbt run --exclude tag:forecast      builds mart_weekly_demand
+  #   2. python -m olist.forecast            reads it, writes these tables
+  #   3. dbt run --select tag:forecast       builds the forecast marts
+  #
+  # reproduce.sh does exactly that. A plain `dbt run` on a fresh warehouse
+  # fails at step 3 with "table forecast.forecast_backtest does not exist",
+  # which is the correct and legible failure -- better than a silently empty
+  # accuracy mart, which is what a source with a default-empty fallback would
+  # produce.
+  #
+  # The forecasting itself is not expressible in SQL: a rolling-origin
+  # backtest is a loop over refits, and Holt damping is an optimiser. What IS
+  # expressible in SQL is every metric computed from the results, which is why
+  # the scoring lives in the marts below rather than in the Python.
+  # ---------------------------------------------------------------------
+  - name: forecast
+    schema: forecast
+    description: Forecast outputs written by olist/forecast.py.
+    tables:
+      - name: forecast_backtest
+        description: >
+          One row per (grain, segment, measure, model, origin, horizon) with
+          the forecast made and the actual that subsequently landed. Expanding
+          window, so no observation ever informs a forecast of itself.
+        columns:
+          - name: model
+            tests: [not_null]
+          - name: horizon
+            tests: [not_null]
+          - name: actual
+            tests: [not_null]
+          - name: forecast
+            tests: [not_null]
+
+      - name: forecast_future
+        description: Forward forecast past the end of history, with 80% intervals.
+        columns:
+          - name: model
+            tests: [not_null]
+          - name: target_week
+            tests: [not_null]
+
+      - name: forecast_run
+        description: One row of run metadata - when, what horizon, which models.

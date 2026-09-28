@@ -163,3 +163,58 @@ models:
         tests: [not_null]
       - name: weight_band
         tests: [not_null]
+
+  - name: mart_weekly_demand
+    description: >
+      Forecasting input. Weekly orders and GMV at four grains (total,
+      category, state, category_state), zero-filled so intermittent segments
+      show their gaps, and excluding the truncated final week of the window.
+      is_forecastable carries the volume gate; ungated segments are published
+      rather than dropped so coverage stays answerable.
+    columns:
+      - name: grain
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [total, category, state, category_state]
+      - name: segment
+        tests: [not_null]
+      - name: week_start
+        tests: [not_null]
+      - name: orders
+        tests: [not_null]
+      - name: is_forecastable
+        tests: [not_null]
+
+  - name: mart_forecast_accuracy
+    description: >
+      Backtest accuracy per (grain, segment, measure, model, horizon). Read
+      rel_mae_vs_naive first (below 1 beats the benchmark), then bias
+      (positive = over-forecasting). MAPE is reported because it is asked for
+      and qualified by mape_coverage because it is undefined at zero demand.
+    columns:
+      - name: model
+        tests: [not_null]
+      - name: horizon
+        tests: [not_null]
+      - name: mae
+        tests: [not_null]
+      - name: model_rank
+        tests: [not_null]
+
+  - name: mart_forecast_variance
+    description: >
+      Forecast vs actuals week by week for each segment's champion model,
+      with the miss triaged into material / anomalous / needs_investigation.
+      The anomaly filter compares the miss to that segment's own backtest MAE,
+      which is what separates a forecast problem from a business event.
+    columns:
+      - name: grain
+        tests: [not_null]
+      - name: target_week
+        tests: [not_null]
+      - name: champion_model
+        tests: [not_null]
+      - name: needs_investigation
+        tests: [not_null]
