@@ -21,10 +21,17 @@ echo "==> 2/8 Source data (126MB, skipped if already present and correct size)"
 echo "==> 3/8 Profile the source before modelling"
 .venv/bin/python -m olist.profile_source
 
-echo "==> 4/8 Build the warehouse (everything except the forecast marts)"
+echo "==> 4/8 Build and test everything the forecast does not depend on"
 mkdir -p warehouse
+# `dbt build` rather than `dbt run`, so tests run beside the models they
+# cover instead of all at the end. The selector is DAG-based, not tag-based:
+# tags sit on models, but the nodes that must wait for phase 2 are TESTS --
+# six source tests on forecast.forecast_backtest plus three singular tests
+# that read it. `--exclude tag:forecast` leaves those in and they error with
+# "schema forecast does not exist". `source:forecast+` excludes the source
+# and every descendant, tests included.
 ( cd dbt_project && export DBT_PROFILES_DIR=$PWD \
-  && "$ROOT/.venv/bin/dbt" run --exclude tag:forecast )
+  && "$ROOT/.venv/bin/dbt" build --exclude "source:forecast+" )
 
 # The forecasting step sits INSIDE the dbt DAG, not after it: a rolling-origin
 # backtest is a loop over model refits, which SQL cannot express, but every
@@ -33,11 +40,11 @@ mkdir -p warehouse
 echo "==> 5/8 Fit models and backtest (writes forecast.* tables)"
 .venv/bin/python -m olist.forecast
 
-echo "==> 6/8 Build the forecast marts on top of those tables"
+echo "==> 6/8 Build and test the forecast marts on top of those tables"
 ( cd dbt_project && export DBT_PROFILES_DIR=$PWD \
-  && "$ROOT/.venv/bin/dbt" run --select tag:forecast )
+  && "$ROOT/.venv/bin/dbt" build --select "source:forecast+" )
 
-echo "==> 7/8 Test the warehouse"
+echo "==> 7/8 Full test suite over the finished warehouse"
 ( cd dbt_project && export DBT_PROFILES_DIR=$PWD \
   && "$ROOT/.venv/bin/dbt" test )
 

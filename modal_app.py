@@ -82,6 +82,24 @@ DBT_DIR = f"{PROJECT}/dbt_project"
 FLAGS = ["--project-dir", DBT_DIR, "--profiles-dir", DBT_DIR]
 DBT = ["dbt", "--no-use-colors"]
 
+# The split between phase 1 and phase 3, selected by DAG position rather than
+# by tag.
+#
+# `tag:forecast` was the obvious choice and it is WRONG, because tags sit on
+# models and the things that break are tests. Six source tests on
+# forecast.forecast_backtest and three singular tests that read it carry no
+# tag, so `dbt build --exclude tag:forecast` still ran them against tables
+# phase 2 had not written yet: 152 passed, 9 errored with "schema forecast
+# does not exist", and the refresh died before it ever reached the forecast
+# step.
+#
+# `source:forecast+` selects the forecast source and everything downstream of
+# it -- the two marts, their tests, the source's own tests, and the singular
+# tests that reference it -- because those are edges in the graph rather than
+# labels someone has to remember to apply. A test added later that reads the
+# forecast tables is covered automatically.
+FORECAST_SUBTREE = "source:forecast+"
+
 
 def _run(cmd: list[str], cwd: str = PROJECT) -> None:
     """Run a step, failing the whole function if it fails.
@@ -123,13 +141,13 @@ def refresh():
         raise RuntimeError(f"expected 9 Olist CSVs in /data/raw, found {len(csvs)}: {sorted(csvs)}")
 
     # Phase 1 -- everything that does not depend on the Python forecast.
-    _run(DBT + ["build", "--exclude", "tag:forecast"] + FLAGS)
+    _run(DBT + ["build", "--exclude", FORECAST_SUBTREE] + FLAGS)
 
     # Phase 2 -- fit models and backtest; writes forecast.* into the same file.
     _run(["python", "-m", "olist.forecast"])
 
-    # Phase 3 -- the marts that score those forecasts.
-    _run(DBT + ["build", "--select", "tag:forecast"] + FLAGS)
+    # Phase 3 -- the marts that score those forecasts, and their tests.
+    _run(DBT + ["build", "--select", FORECAST_SUBTREE] + FLAGS)
 
     vol.commit()   # persist the rebuilt DuckDB file
 
