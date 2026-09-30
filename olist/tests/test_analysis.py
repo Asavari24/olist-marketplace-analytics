@@ -227,3 +227,74 @@ def test_zip_centroids_are_unique_per_prefix(con):
         from main_intermediate.int_zip_centroids
     """).fetchone()
     assert n == distinct
+
+
+# --------------------------------------------------------------------------
+# Path resolution
+#
+# These exist because of a real production failure: the Modal container built
+# the warehouse onto its Volume at /data/olist.duckdb, then olist.forecast
+# opened /root/project/warehouse/olist.duckdb and crashed. dbt read the path
+# from OLIST_DUCKDB and this package computed its own. Both now read the same
+# variables, and these tests keep it that way.
+# --------------------------------------------------------------------------
+
+def test_paths_default_to_the_local_checkout(monkeypatch):
+    import importlib
+    for var in ("OLIST_RAW", "OLIST_DUCKDB", "OLIST_DOCS", "OLIST_OUTPUTS"):
+        monkeypatch.delenv(var, raising=False)
+    import olist
+    o = importlib.reload(olist)
+    assert o.WAREHOUSE == o.PROJECT_ROOT / "warehouse" / "olist.duckdb"
+    assert o.RAW_DIR == o.PROJECT_ROOT / "data" / "raw"
+    assert o.DOCS_DIR == o.PROJECT_ROOT / "docs"
+    assert o.OUTPUTS_DIR == o.PROJECT_ROOT / "outputs"
+
+
+def test_every_path_honours_its_environment_variable(monkeypatch):
+    """The container sets all four. If any one stops being read, that module
+    silently writes to or reads from the wrong filesystem."""
+    import importlib
+    monkeypatch.setenv("OLIST_DUCKDB", "/data/olist.duckdb")
+    monkeypatch.setenv("OLIST_RAW", "/data/raw")
+    monkeypatch.setenv("OLIST_DOCS", "/data/docs")
+    monkeypatch.setenv("OLIST_OUTPUTS", "/data/outputs")
+    import olist
+    o = importlib.reload(olist)
+    from pathlib import Path
+    assert o.WAREHOUSE == Path("/data/olist.duckdb")
+    assert o.RAW_DIR == Path("/data/raw")
+    assert o.DOCS_DIR == Path("/data/docs")
+    assert o.OUTPUTS_DIR == Path("/data/outputs")
+    importlib.reload(o)  # leave the module clean for other tests
+
+
+def test_modal_app_sets_every_path_variable_the_package_reads():
+    """Catches the inverse drift: a new path added to olist/__init__.py that
+    modal_app.py never sets, so the container falls back to a local default
+    that does not exist inside it."""
+    import ast
+    import pathlib
+
+    src = pathlib.Path(__file__).resolve().parents[2] / "modal_app.py"
+    tree = ast.parse(src.read_text())
+    declared = {
+        k.value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Dict)
+        for k in node.keys
+        if isinstance(k, ast.Constant) and str(k.value).startswith("OLIST_")
+    }
+
+    init = pathlib.Path(__file__).resolve().parents[1] / "__init__.py"
+    read = {
+        node.args[0].value
+        for node in ast.walk(ast.parse(init.read_text()))
+        if isinstance(node, ast.Call)
+        and getattr(node.func, "id", None) == "_path"
+        and node.args and isinstance(node.args[0], ast.Constant)
+    }
+
+    assert read, "no _path() calls found; did olist/__init__.py change shape?"
+    missing = read - declared
+    assert not missing, f"modal_app.py does not set: {sorted(missing)}"

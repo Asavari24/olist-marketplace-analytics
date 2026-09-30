@@ -53,11 +53,20 @@ image = (
         "fastapi[standard]",
     )
     .env({
-        # dbt_project/profiles.yml reads OLIST_DUCKDB; models/staging/_sources.yml
-        # reads OLIST_RAW. Both fall back to local paths when unset, so the
-        # same repo builds locally and here with no branching.
+        # These four are read by BOTH dbt and the olist package.
+        # profiles.yml reads OLIST_DUCKDB, models/staging/_sources.yml reads
+        # OLIST_RAW, and olist/__init__.py reads all four. That shared
+        # resolution is the point: the first run here built the warehouse
+        # onto the Volume and then olist.forecast went looking for
+        # /root/project/warehouse/olist.duckdb, because the Python package
+        # was computing its own path instead of reading the same variable.
         "OLIST_DUCKDB": "/data/olist.duckdb",
         "OLIST_RAW": "/data/raw",
+        # Generated output goes to the Volume, never into /root/project --
+        # that is the mounted source tree, and writing build artefacts back
+        # into the code is wrong whether or not the mount permits it.
+        "OLIST_DOCS": "/data/docs",
+        "OLIST_OUTPUTS": "/data/outputs",
     })
     .add_local_dir(
         ".",
