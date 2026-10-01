@@ -209,12 +209,18 @@ modal deploy modal_app.py                             # schedule + endpoints
 
 | Endpoint | Serves |
 |---|---|
-| `/delivery_performance?dimension=customer_region&limit=20` | Late rate and stage times for any slice |
-| `/coverage` | Every row the pipeline excludes, and why |
+| `delivery_performance` | Late rate and stage times for any slice |
+| `coverage` | Every row the pipeline excludes, and why |
 
-<!-- Fill these in after `modal deploy` prints them. Modal's URL pattern is
-     https://<workspace>--olist-marts-<function-name>.modal.run -->
-**Live URLs:** _not yet deployed — see Status._
+**Live:**
+
+- <https://asavari2404--olist-marts-delivery-performance.modal.run> —
+  add `?dimension=customer_state&limit=20`; valid dimensions are
+  `customer_region`, `customer_state`, `distance_band`, `gmv_band`,
+  `primary_category`, `payment_type`, `route`
+- <https://asavari2404--olist-marts-coverage.modal.run>
+
+[Deployment dashboard](https://modal.com/apps/asavari2404/main/deployed/olist-marts)
 
 The refresh runs on a `Cron("0 6 * * *")` schedule and rebuilds *and tests*
 everything with `dbt build`, so a failed test fails the run rather than
@@ -230,7 +236,8 @@ Two details that are easy to get wrong and are handled explicitly:
   genuinely NaN where a slice had no late orders. Returned raw, those slices
   answer HTTP 500.
 
-Paths are environment-driven (`OLIST_DUCKDB`, `OLIST_RAW`) with local defaults,
+Paths are environment-driven (`OLIST_RAW`, `OLIST_DUCKDB`, `OLIST_DOCS`,
+`OLIST_OUTPUTS`) with local defaults, read by both dbt and the `olist` package,
 so the same repo builds on a laptop and in the container with no branching.
 
 ## Build order
@@ -249,7 +256,5 @@ spec is written but no workbook is built — the repo ships the extracts and the
 build instructions, not a `.twbx`. The forecast intervals are indicative rather
 than calibrated; backtest residuals would give better ones.
 
-`modal_app.py` is written and statically validated — it imports cleanly against
-Modal 1.5.5, its ignore patterns and endpoint SQL are verified against the real
-warehouse — but it has **not been deployed**, so the live URLs above are still
-blank. Deploying needs `modal setup`, which is an interactive browser login.
+Deployed and live on Modal — all 173 dbt nodes build and pass inside the
+container, and both endpoints serve from the Volume.
