@@ -17,7 +17,7 @@ counts every row the pipeline excludes.
 ## Headline findings
 
 **1. The delivery promise is padded by roughly a factor of two.**
-Mean actual delivery is **12.5 days** against a mean promise of **24.7 days** —
+Mean actual delivery is **12.5 days** against a mean promise of **24.6 days** —
 orders consume only **51%** of the window they were quoted. The 93.2% on-time rate
 is bought with padding, not speed. It is simultaneously a conversion cost: a
 checkout quoting 25 days for a parcel that reliably arrives in 12 loses orders it

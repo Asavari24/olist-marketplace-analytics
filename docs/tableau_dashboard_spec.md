@@ -12,7 +12,7 @@ That is deliberate and it is the single most important rule in this document.
 A control limit, a survival curve or a variance decomposition computed in a
 Tableau calculated field cannot be unit-tested, cannot be code-reviewed, and
 silently changes when someone edits a worksheet. Every number specified below
-is covered by one of the 118 dbt tests or 40 Python tests in this repo.
+is covered by one of the 145 dbt tests or 70 Python tests in this repo.
 
 **Rule: no aggregation in Tableau beyond SUM, AVG and a weighted average.**
 If a view seems to need more, the calculation belongs in a dbt model.
@@ -70,7 +70,7 @@ or `'customer_state'` via a parameter.
   between them. This is the project's headline finding and should be the
   largest object on the dashboard.
 - **Title the gap.** Label the shaded band `Padding` with a caption reading
-  *"Olist promises 24.7 days and delivers in 12.5. The 93% on-time rate is
+  *"Olist promises 24.6 days and delivers in 12.5. The 93% on-time rate is
   bought with padding, not speed."*
 - **Map or bar by state.** Colour by weighted late rate, sequential.
 - **Filter out `suppress_small_n = TRUE` by default.** Roraima has fewer than
