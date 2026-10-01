@@ -240,6 +240,11 @@ Paths are environment-driven (`OLIST_RAW`, `OLIST_DUCKDB`, `OLIST_DOCS`,
 `OLIST_OUTPUTS`) with local defaults, read by both dbt and the `olist` package,
 so the same repo builds on a laptop and in the container with no branching.
 
+Getting this running surfaced three faults that 173 local tests could not: a
+test-selection bug, a duplicated path config, and a JSON serialisation fault on
+sparse slices. All three were environment assumptions rather than analysis
+errors — see commits `0c6625c`, `e3c4ea0`, `2f7bfb3`.
+
 ## Build order
 
 The forecasting step sits *inside* the dbt DAG rather than after it, so
